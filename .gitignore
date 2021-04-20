@@ -1,2 +1,3 @@
-news
+node_modules
+*-error.log
 db.sqlite3
