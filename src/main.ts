@@ -37,8 +37,26 @@ const urls = [
   'https://feeds.bbci.co.uk/news/business/rss.xml',
 ]
 
-const articles: Article[] = []
-const readArticles: string[] = []
+let articles: Article[] = []
+let readArticles: string[] = []
+
+interface SavedState {
+  articles: Article[]
+  readArticles: string[]
+}
+
+async function save() {
+  await Bun.write("state.json", JSON.stringify({ articles, readArticles }))
+}
+
+async function load() {
+  let f = await Bun.file("state.json")
+  if (await f.exists()) {
+    let data = JSON.parse(await f.text()) as SavedState
+    articles = data.articles
+    readArticles = data.readArticles
+  }
+}
 
 function sleep(time: number): Promise<void> {
   return new Promise((res, rej) => {
@@ -92,25 +110,33 @@ async function update() {
       )
     }
   }
+  await save()
 }
 
 cron.schedule('*/1 * * * *', update);
 cron.schedule('*/5 * * * *', print);
 
 async function print() {
+  if (articles.length < 1) {
+    return
+  }
   for (let step = 0; step < 10; step++) {
-    let article = articles.pop()
-    if (article != null) {
-      console.log(`## ${article.title}`)
-      console.log('')
-      console.log(article.description)
-      console.log('')
-      console.log(`[1]: ${article.link}`)
-      console.log('')
-      console.log('')
+    let article = articles.shift()
+    if (article == null) {
+      return
     }
+    console.log(`## ${article.title}`)
+    console.log('')
+    console.log(article.description)
+    console.log('')
+    console.log(`[1]: ${article.link}`)
+    console.log('')
+    console.log('')
+    readArticles.push(article.guid)
+    await save()
     await sleep(30 * 1000)
   }
 }
-
-update().then(print)
+await load()
+await update()
+await print()
