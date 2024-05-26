@@ -126,7 +126,7 @@ async function update() {
   await save()
 }
 
-cron.schedule('*/1 * * * *', update);
+cron.schedule('*/15 * * * *', update);
 cron.schedule('*/5 * * * *', print);
 
 async function print() {
