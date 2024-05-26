@@ -46,6 +46,15 @@ interface SavedState {
   readArticles: string[]
 }
 
+async function stateFileExists(): Promise<boolean> {
+  let fileExists = false
+  try {
+    let stat = await fs.stat("state.json")
+    fileExists = stat.isFile()
+  } catch { }
+  return fileExists
+}
+
 async function save() {
   try {
     await fs.writeFile("state.json", JSON.stringify({ articles, readArticles }))
@@ -55,12 +64,7 @@ async function save() {
 }
 
 async function load() {
-  let fileExists = false
-  try {
-    let stat = await fs.stat("state.json")
-    fileExists = stat.isFile()
-  } catch { }
-  if (fileExists) {
+  if (await stateFileExists()) {
     let data = JSON.parse(await fs.readFile("state", { encoding: "utf8" })) as SavedState
     articles = data.articles
     readArticles = data.readArticles
@@ -146,6 +150,9 @@ async function print() {
     await sleep(30 * 1000)
   }
 }
+
 await load()
-await update()
+if (! await stateFileExists()) {
+  await update()
+}
 await print()
