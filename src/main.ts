@@ -1,4 +1,5 @@
 import { promisify } from "node:util"
+import fs from "node:fs/promises"
 
 import cron from 'node-cron'
 import { parseString } from 'xml2js'
@@ -46,13 +47,16 @@ interface SavedState {
 }
 
 async function save() {
-  await Bun.write("state.json", JSON.stringify({ articles, readArticles }))
+  try {
+    await fs.writeFile("state.json", JSON.stringify({ articles, readArticles }))
+  } catch (e) {
+    console.warn("couldn't save state", e)
+  }
 }
 
 async function load() {
-  let f = await Bun.file("state.json")
-  if (await f.exists()) {
-    let data = JSON.parse(await f.text()) as SavedState
+  if (await fs.exists("state.json")) {
+    let data = JSON.parse(await fs.readFile("state", { encoding: "utf8" })) as SavedState
     articles = data.articles
     readArticles = data.readArticles
   }
