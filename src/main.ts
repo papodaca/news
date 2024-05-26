@@ -55,7 +55,12 @@ async function save() {
 }
 
 async function load() {
-  if (await fs.exists("state.json")) {
+  let fileExists = false
+  try {
+    let stat = await fs.stat("state.json")
+    fileExists = stat.isFile()
+  } catch { }
+  if (fileExists) {
     let data = JSON.parse(await fs.readFile("state", { encoding: "utf8" })) as SavedState
     articles = data.articles
     readArticles = data.readArticles
